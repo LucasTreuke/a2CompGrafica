@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        #start{
+            z-index: 10;
+        }
+        body{
+            background-color: #204c66;
+        }
+        #my_canvas{
+            width: 100%;
+            left: 0;
+            position: absolute;
+            top: 0;
+        }
+    </style>
+</head>
+<body>
+    <button id="start" style="position: absolute;top: 25"onclick="line_descent()">Start-animation</button>
+    <canvas id="my_canvas" width=10 height=10></canvas>
+</body>
+<script>
+    canvas = document.getElementById("my_canvas")
+    ctx = canvas.getContext("2d");
+    
+
+    canvas_height = 900
+    canvas_width = 1600
+    n_sites = 9
+    
+    
+    canvas.width = canvas_width
+    canvas.height = canvas_height
+
+    shakyness = 2
+    shakySmothness = 0.3
+
+
+    sites=[]
+    
+    for(i=0;i<n_sites;i++){
+        sites.push([50+Math.floor(Math.random() * canvas_width),50+Math.floor(Math.random() * canvas_height)])
+    }
+
+    
+
+    Array.prototype.min = function() {
+        return Math.min.apply(null, this);
+    };
+
+    function dot_draw_cyl(x,y,r,rgba){
+        ctx.fillStyle = "rgba("+rgba[0]+","+rgba[1]+","+rgba[2]+","+rgba[3]+")"
+        ctx.beginPath();
+        ctx.arc (x,canvas_height-y,r,0,Math.PI*2)
+        ctx.fill()
+    }
+
+    function dot_draw(x,y,r,rgba){
+        ctx.fillStyle = "rgba("+rgba[0]+","+rgba[1]+","+rgba[2]+","+rgba[3]+")"
+        ctx.fillRect( x-r, (canvas_height - y) - r, 2*r, 2*r )
+    }
+    
+    function line_descent(l = canvas_height+40, intersection_map = [], draw_curves = true){
+        setTimeout(function(){
+            ctx.clearRect(0,0,canvas_width,canvas_height)
+
+            ctx.fillStyle = "rgba("+255+","+255+","+255+","+0.6+")"
+            ctx.fillRect(0,canvas_height-l,canvas_width,5)
+            ctx.fillStyle = "rgba("+255+","+255+","+255+","+0.4+")"
+            ctx.fillRect(0,canvas_height-l-5,canvas_width,5)
+            ctx.fillStyle = "rgba("+255+","+255+","+255+","+0.2+")"
+            ctx.fillRect(0,canvas_height-l-10,canvas_width,5)
+
+            for(i in sites){
+                site=sites[i]
+                dot_draw_cyl(site[0],site[1],8,[255, 184, 60, 0.9])
+            }
+            last_c = -1
+            
+            if(draw_curves){
+                for(x=0;x<canvas_width;x+=1){
+                    frameskip = 0 //Tentando combater a ineficiencia do meu codigo
+                    y_min=[]
+                    y_id=[]
+                    for(i in sites){
+                        px=sites[i][0]
+                        py=sites[i][1]
+                        if(py>=l){
+                            y = (1 / (2*(py - l))) * ( (x - px)**2 + py**2 - l**2  )
+                            dot_draw(x,y,4,[147, 184, 190, 0.3])
+                            y_min.push(y)
+                            y_id.push(i)
+                            if (i>3){frameskip+=1}
+                        }
+                    }            
+                    y = y_min.min()
+                    min_id = y_id[y_min.indexOf(y)]
+                    if(last_c!=-1 && min_id!=last_c){
+                        intersection_map.push([x,y])
+                        dot_draw_cyl(x,y,16,[255,255,255, 0.3])
+                    }
+                    last_c = min_id
+                    dot_draw(x,y,6,[255,255,255, 0.3])
+                    x+=frameskip
+                }
+            }
+
+            frameskip = 0
+            
+            if(l<canvas_height/4){frameskip+=1}
+            if(l<(canvas_height*(-0.8))){frameskip+=4}
+            if(l<(canvas_height*(-1.5))){frameskip+=4}
+
+            for(i in intersection_map){
+                dot_draw_cyl(intersection_map[i][0]+Math.sin((l*shakySmothness+intersection_map[i][0])/(frameskip+1))*shakyness,intersection_map[i][1]+Math.cos((l*shakySmothness-intersection_map[i][1]))/(frameskip+1)*shakyness,7,[147, 184, 240, 0.5])
+            }
+
+            
+            l = l - 1 - frameskip
+            if(l>(canvas_height*(-2.8))){line_descent(l, intersection_map)}else{line_descent(l, intersection_map,false)}
+        },10)
+    }    
+
+    for(i in sites){
+        site=sites[i]
+        dot_draw_cyl(site[0],site[1],8,[255, 184, 60, 0.9])
+    }
+
+</script>
+</html>
